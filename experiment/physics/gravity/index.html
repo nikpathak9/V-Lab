@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+
+<html lang = "en">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+    <head>
+
+        <!-- Force HTTPS -->
+
+        <script>window.location.href.match("https")||(window.location.href=window.location.href.replace("http","https"));</script>
+
+        <!-- Metadata -->
+
+        <meta charset = "utf-8">
+        <meta name = "description" content = "A simple gravity simulator">
+        <meta name = "viewport" content = "width = device-width">
+
+        <title>Gravity Simulator</title>
+        <link href = "images/gravity-simulator.png" rel = "icon">
+        <link href = "style.css" rel = "stylesheet">
+
+        <meta property = "og:type" content = "website">
+        <meta property = "og:title" content = "Gravity Simulator">
+        <meta property = "og:description" content = "A simple gravity simulator">
+        <meta property = "og:image" content = "https://gravity-simulator.mreconomical.repl.co/images/gravity-simulator.png">
+
+        <!--
+            Font Awesome Free 5.12.0 by @fontawesome - https://fontawesome.com
+            License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+        -->
+
+        <link href = "https://use.fontawesome.com/releases/v5.12.0/css/all.css" rel = "stylesheet" crossorigin = "anonymous">
+
+        <!-- Data and scripts -->
+
+        <script src = "config.js"></script>
+        <script src = "methods.js"></script>
+        <script src = "control.js"></script>
+        <script src = "sim.js"></script>
+        <script src = "main.js"></script>
+
+    </head>
+
+    <body>
+
+        <!-- Description -->
+
+        <div id = "desc">
+
+            <div id = "title">Gravity Simulator</div>
+            <br>
+            <div id = "dev"></div>
+
+        </div>
+
+        <!-- Controls -->
+
+        <div id = "toggle-control" title = "Toggle Controls">
+
+            <i class = "fas fa-bars" id = "control-bars"></i>
+
+        </div>
+
+        <div class = "controlsActive" id = "controls">
+
+            <div class = "control" id = "gravity-spot-control" title = "Gravity Spot (Hotkey G)">
+
+                <div class = "controlIcon objectIcon" id = "gravity-spot-icon"></div>
+
+            </div>
+
+            <div class = "control" id = "object-control" title = "Object (Hotkey O)">
+
+                <div class = "controlIcon objectIcon" id = "object-icon"></div>
+
+            </div>
+
+            <div class = "control" id = "delete-control" title = "Delete (Hotkey X)">
+
+                <i class = "controlIcon fas fa-times"></i>
+
+            </div>
+
+            <div class = "control" id = "clear-control" title = "Clear">
+
+                <i class = "controlIcon fas fa-trash-alt"></i>
+
+            </div>
+
+            <div class = "control" id = "settings-control" title = "Settings">
+
+                <i class = "controlIcon fas fa-cog"></i>
+
+            </div>
+
+            <div class = "settingsHidden" id = "settings">
+
+                Gravity Spot Placement Mass
+                <input class = "settingsSlider" id = "gravity-spot-slider" type = "range" min = "6" max = "8" value = "7" step = "0.05"></input>
+                <div class = "sliderValue" id = "gravity-spot-value">3.00e+7</div>
+                <button class = "sliderReset" id = "gravity-spot-reset">Reset</button>
+
+                Object Placement Mass
+                <input class = "settingsSlider" id = "object-slider" type = "range" min = "2" max = "4" value = "3" step = "0.05"></input>
+                <div class = "sliderValue" id = "object-value">1.60e+3</div>
+                <button class = "sliderReset" id = "object-reset">Reset</button>
+
+                Gravity Strength
+                <input class = "settingsSlider" id = "gravity-slider" type = "range" min = "-12" max = "-10" value = "-11" step = "0.05"></input>
+                <div class = "sliderValue" id = "gravity-value">6.67e-11</div>
+                <button class = "sliderReset" id = "gravity-reset">Reset</button>
+
+                Tick Warp
+
+                <div id = "tick-warp">
+
+                    <input id = "warp-input" type = "text" maxlength = "5"></input>
+                    <button id = "warp">Warp</button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Simulation canvas -->
+
+        <canvas class = "canvas" id = "sim"></canvas>
+
+        <!-- Control canvas -->
+
+        <canvas class = "canvas" id = "control"></canvas>
+
+    </body>
+
+<style>
+
+    /* General stuff */
+
+@import url("https://fonts.googleapis.com/css?family=Oxygen&display=swap");
+
+* {
+    font-family: Oxygen;
+
+    box-sizing: border-box;
+}
+
+*:disabled {
+    pointer-events: none;
+    opacity: 0.6;
+
+    transition-duration: 300ms;
+}
+
+/* Description */
+
+#desc {
+    position: absolute;
+    top: 30px;
+    left: 36px;
+
+    pointer-events: none;
+    z-index: 2;
+    user-select: none;
+
+    line-height: 20px;
+}
+
+#title {
+    font-size: 32px;
+}
+
+#dev {
+    font-size: 16px;
+
+    margin-left: 4px;
+}
+
+/* Controls */
+
+#toggle-control {
+    position: absolute;
+    top: 114px;
+    left: -1px;
+
+    width: 48px;
+    height: 36px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+    z-index: 2;
+
+    font-size: 22px;
+
+    border: 1px solid #555555;
+    border-radius: 0px 8px 8px 0px;
+    background-color: #F9F9F9;
+    transition-duration: 300ms;
+}
+
+#toggle-control:hover {
+    border-color: #000000;
+    background-color: #FDFDFD;
+}
+
+#control-bars {
+    position: relative;
+    left: -1px;
+}
+
+#controls {
+    position: absolute;
+    top: 168px;
+
+    z-index: 2;
+
+    transition-duration: 500ms;
+}
+
+.controlsActive {
+    left: 0px;
+}
+
+.controlsHidden {
+    left: -87px;
+}
+
+.control {
+    position: absolute;
+    left: -6px;
+
+    width: 88px;
+    height: 80px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+    z-index: 1;
+
+    font-size: 40px;
+
+    border: 1px solid #555555;
+    background-color: #F9F9F9;
+    transition-duration: 300ms;
+}
+
+.control:hover {
+    z-index: 2;
+
+    border-color: #000000;
+    background-color: #FDFDFD;
+}
+
+.controlActive {
+    left: -1px;
+
+    z-index: 3;
+
+    background-color: #FFFFFF;
+}
+
+.controlIcon {
+    position: relative;
+    left: 2px;
+}
+
+#gravity-spot-control {
+    top: 0px;
+
+    border-radius: 0px 8px 0px 0px;
+}
+
+#object-control {
+    top: 79px;
+}
+
+#delete-control {
+    top: 158px;
+}
+
+#clear-control {
+    top: 237px;
+}
+
+#settings-control {
+    top: 316px;
+
+    border-radius: 0px 0px 8px 0px;
+}
+
+.objectIcon {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 20px;
+}
+
+#gravity-spot-icon {
+    background-color: #000000;
+}
+
+#object-icon {
+    background-color: #0091FF;
+}
+
+#settings {
+    position: absolute;
+    top: 0px;
+
+    width: 230px;
+    height: 396px;
+
+    user-select: none;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    font-size: 14px;
+
+    border: 1px solid #555555;
+    border-radius: 0px 8px 8px 0px;
+    padding: 16px 0px;
+    background-color: #F9F9F9;
+    transition-duration: 500ms;
+}
+
+.settingsActive {
+    left: 74px;
+}
+
+.settingsHidden {
+    left: -151px;
+}
+
+.settingsSlider {
+    width: calc(100% - 60px);
+    height: 5px;
+
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    opacity: 0.8;
+
+    margin: 12px 0px 12px 0px;
+    background-color: #DDDDDD;
+    transition-duration: 300ms;
+}
+
+.settingsSlider:hover {
+    opacity: 1;
+}
+
+.settingsSlider::-webkit-slider-thumb {
+    width: 8px;
+    height: 20px;
+
+    -webkit-appearance: none;
+    cursor: pointer;
+
+    background-color: #0091FF;
+}
+
+.settingsSlider::-moz-range-thumb {
+    width: 8px;
+    height: 20px;
+
+    -moz-appearance: none;
+    cursor: pointer;
+
+    background-color: #0091FF;
+}
+
+.sliderValue {
+    font-size: 12px;
+
+    margin-bottom: 5px;
+}
+
+.sliderReset {
+    width: 100px;
+    height: 24px;
+
+    cursor: pointer;
+    outline: none;
+
+    font-size: 11px;
+
+    border: 0.5px solid #555555;
+    margin-bottom: 12px;
+    background-color: #F9F9F9;
+    transition-duration: 300ms;
+}
+
+.sliderReset:hover {
+    border-color: #000000;
+    background-color: #FDFDFD;
+}
+
+#tick-warp {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+    margin-top: 6px;
+}
+
+#warp-input {
+    height: 24px;
+    width: 80px;
+
+    outline: none;
+
+    text-align: center;
+
+    margin-right: 8px;
+}
+
+#warp {
+    width: 80px;
+    height: 24px;
+
+    cursor: pointer;
+    outline: none;
+
+    font-size: 11px;
+
+    border: 0.5px solid #555555;
+    background-color: #F9F9F9;
+    transition-duration: 300ms;
+}
+
+#warp:hover {
+    border-color: #000000;
+    background-color: #FDFDFD;
+}
+
+/* Canvases */
+
+.canvas {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+
+    width: 100%;
+    height: 100%;
+}
+
+#control {
+    z-index: 1;
+}
+
+</style>
+
+<script>
+// Data
+
+const Sim = {
+    spots: [],
+    objects: []
+}
+
+let SimHeight
+let SimWidth
+
+let NextFrame = true
+
+// Methods
+
+function initialize() {
+    // Initialize simulation
+
+    resize()
+
+    Sim.spots.push({
+        id: generate_id(),
+        x: 50,
+        y: 50,
+        radius: Math.floor(Math.sqrt(Settings.spotMass / config.spotDensity)),
+        mass: Settings.spotMass
+    })
+
+    Sim.objects.push({
+        id: generate_id(),
+        x: 50,
+        y: 25,
+        radius: Math.floor(Math.sqrt(Settings.objectMass / config.objectDensity)),
+        mass: Settings.objectMass,
+        vX: 0.36,
+        vY: 0,
+        prevPos: []
+    })
+
+    // Start simulation
+
+    requestAnimationFrame(sim)
+}
+
+function sim() {
+    // Objects to destroy
+
+    const destroy_list = []
+
+    // Sim loop
+
+    for (let o = 0; o < Sim.objects.length; o ++) {
+        // Data
+
+        const object = Sim.objects[o]
+
+        let forceX = 0
+        let forceY = 0
+
+        let destroy = false
+
+        // Compute all gravity spots
+
+        for (let s = 0; s < Sim.spots.length; s ++) {
+            // Spot
+
+            const spot = Sim.spots[s]
+
+            // Check collision
+
+            if (distance(spot.x, spot.y, object.x, object.y, "px") <= spot.radius + object.radius) {
+                destroy = true
+                break
+            }
+
+            // Force
+
+            const dir = Math.atan2(spot.y - object.y, spot.x - object.x)
+            const force = Settings.gravity * spot.mass * object.mass / distance(spot.x, spot.y, object.x, object.y) ** 2
+
+            if (isFinite(force)) {
+                forceX += force * Math.cos(dir)
+                forceY += force * Math.sin(dir)
+            }
+        }
+
+        // Compute all other objects
+
+        for (let ob = 0; ob < Sim.objects.length; ob ++) {
+            if (ob != o) {
+                // Object
+
+                const obj = Sim.objects[ob]
+
+                // Force
+
+                const dir = Math.atan2(obj.y - object.y, obj.x - object.x)
+                const dist = distance(obj.x, obj.y, object.x, object.y)
+                if (dist >= obj.radius) {
+                    // Cheaty fix
+
+                    const force = Settings.gravity * obj.mass * object.mass / dist ** 2
+
+                    if (isFinite(force)) {
+                        forceX += force * Math.cos(dir)
+                        forceY += force * Math.sin(dir)
+                    }
+                }
+            }
+        }
+
+        // Update previous positions
+
+        while (object.prevPos.length >= config.trailLength) {
+            object.prevPos.pop()
+        }
+        object.prevPos.unshift([object.x, object.y])
+
+        // Update object
+
+        object.vX += forceX
+        object.vY += forceY
+
+        object.x += object.vX
+        object.y += object.vY
+
+        // Check position
+
+        if (object.x < -1 * config.destroyFactor || object.x > 100 + config.destroyFactor || object.y < -1 * config.destroyFactor || object.y > 100 + config.destroyFactor) {
+            destroy = true
+        }
+
+        // Destroy the current object
+
+        if (destroy) {
+            destroy_list.push(object.id)
+            continue
+        }
+    }
+
+    // Destroy objects
+
+    if (destroy_list.length) {
+        Sim.objects = Sim.objects.filter(object => !destroy_list.includes(object.id))
+    }
+
+    // Next frame
+
+    if (NextFrame) {
+        render()
+        requestAnimationFrame(sim)
+    }
+}
+
+function render() {
+    // Clear canvas
+
+    SimCanvas.clearRect(0, 0, SimWidth, SimHeight)
+
+    // Draw gravity spots
+
+    SimCanvas.fillStyle = config.spotColor
+    SimCanvas.strokeStyle = config.spotColor
+    for (let s = 0; s < Sim.spots.length; s ++) {
+        // Spot
+
+        const spot = Sim.spots[s]
+
+        SimCanvas.beginPath()
+        SimCanvas.arc(SimWidth * spot.x / 100, SimHeight * spot.y / 100, spot.radius, 0, 2 * Math.PI)
+        SimCanvas.fill()
+        SimCanvas.closePath()
+        SimCanvas.stroke()
+    }
+
+    // Draw objects
+
+    SimCanvas.fillStyle = config.objectColor
+    SimCanvas.strokeStyle = config.objectColor
+    for (let o = 0; o < Sim.objects.length; o ++) {
+        // Object
+
+        const object = Sim.objects[o]
+
+        SimCanvas.beginPath()
+        SimCanvas.arc(SimWidth * object.x / 100, SimHeight * object.y / 100, object.radius, 0, 2 * Math.PI)
+        SimCanvas.fill()
+        SimCanvas.closePath()
+        SimCanvas.stroke()
+
+        // Object trail
+
+        if (object.prevPos.length) {
+            SimCanvas.moveTo(SimWidth * object.x / 100, SimHeight * object.y / 100)
+            SimCanvas.beginPath()
+            for (let p = 0; p < object.prevPos.length; p ++) {
+                SimCanvas.lineTo(SimWidth * object.prevPos[p][0] / 100, SimHeight * object.prevPos[p][1] / 100)
+            }
+            SimCanvas.moveTo(SimWidth * object.prevPos[object.prevPos.length - 1][0] / 100, SimHeight * object.prevPos[object.prevPos.length - 1][1] / 100)
+            SimCanvas.closePath()
+            SimCanvas.strokeStyle = config.trailColor
+            SimCanvas.lineWidth = config.trailWidth
+            SimCanvas.stroke()
+            SimCanvas.lineWidth = 1
+        }
+    }
+}
+</script>
+<script>
+function resize() {
+    // Resize canvas to fit window
+
+    SimHeight = window.innerHeight * 2
+    SimWidth = window.innerWidth * 2
+
+    SimCanvas.clearRect(0, 0, SimWidth, SimHeight)
+    ControlCanvas.clearRect(0, 0, SimWidth, SimHeight)
+
+    SimCanvas.canvas.height = SimHeight
+    SimCanvas.canvas.width = SimWidth
+    ControlCanvas.canvas.height = SimHeight
+    ControlCanvas.canvas.width = SimWidth
+
+    // Rerender simulation
+
+    render()
+}
+
+function distance(x1, y1, x2, y2, type) {
+    if (type == "px") {
+        return Math.sqrt(((x1 - x2) / 100 * SimWidth) ** 2 + ((y1 - y2) / 100 * SimHeight) ** 2)
+    } else {
+        return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    }
+}
+
+function generate_id() {
+    return Math.random().toString(36).substr(2)
+}
+</script>
+
+<script>
+
+// Simulator canvas context
+
+let SimCanvas
+
+// When document is loaded...
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Event listeners
+
+    control_listeners()
+
+    // Initialize simulation
+
+    SimCanvas = document.getElementById("sim").getContext("2d")
+    ControlCanvas = document.getElementById("control").getContext("2d")
+
+    initialize()
+})
+
+// Resize canvas
+
+onresize = resize
+</script>
+
+<script>
+const Settings = {
+    spotMass: 30000000,
+    objectMass: 1600,
+    gravity: 0.0000000000667408,
+
+    spotBase: 3,
+    objectBase: 1.6,
+    gravityBase: 6.67408
+}
+
+let Control
+let MouseDown = {
+    down: false,
+    x: null,
+    y: null
+}
+
+let ControlCanvas
+
+function control_listeners() {
+    // Elements
+
+    const toggle_control = document.getElementById("toggle-control")
+
+    const controls = document.getElementById("controls")
+    const gravity_spot_control = document.getElementById("gravity-spot-control")
+    const object_control = document.getElementById("object-control")
+    const delete_control = document.getElementById("delete-control")
+    const clear_control = document.getElementById("clear-control")
+    const settings_control = document.getElementById("settings-control")
+
+    const settings = document.getElementById("settings")
+    const gravity_spot_slider = document.getElementById("gravity-spot-slider")
+    const gravity_spot_value = document.getElementById("gravity-spot-value")
+    const gravity_spot_reset = document.getElementById("gravity-spot-reset")
+    const object_slider = document.getElementById("object-slider")
+    const object_value = document.getElementById("object-value")
+    const object_reset = document.getElementById("object-reset")
+    const gravity_slider = document.getElementById("gravity-slider")
+    const gravity_value = document.getElementById("gravity-value")
+    const gravity_reset = document.getElementById("gravity-reset")
+    const warp_input = document.getElementById("warp-input")
+    const warp = document.getElementById("warp")
+
+    const control_canvas = document.getElementById("control")
+
+    // Data
+
+    let active
+
+    // Event listeners
+
+    toggle_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            if (controls.className == "controlsActive") {
+                if (settings.className == "settingsActive") {
+                    settings.className = "settingsHidden"
+                }
+                controls.className = "controlsHidden"
+            } else {
+                controls.className = "controlsActive"
+            }
+        }
+    })
+
+    gravity_spot_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            if (Control != "gravity_spot") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "gravity_spot"
+                gravity_spot_control.classList.add("controlActive")
+                active = gravity_spot_control
+            } else {
+                Control = null
+                active = null
+                gravity_spot_control.className = "control"
+            }
+        }
+    })
+
+    object_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            if (Control != "object") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "object"
+                object_control.classList.add("controlActive")
+                active = object_control
+            } else {
+                Control = null
+                active = null
+                object_control.className = "control"
+            }
+        }
+    })
+
+    delete_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            if (Control != "delete") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "delete"
+                delete_control.classList.add("controlActive")
+                active = delete_control
+            } else {
+                Control = null
+                active = null
+                delete_control.className = "control"
+            }
+        }
+    })
+
+    document.addEventListener("keypress", event => {
+        if (event.isTrusted && event.target != warp_input) {
+            if (event.key == "g" && Control != "gravity_spot") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "gravity_spot"
+                gravity_spot_control.classList.add("controlActive")
+                active = gravity_spot_control
+            } else if (event.key == "o" && Control != "object") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "object"
+                object_control.classList.add("controlActive")
+                active = object_control
+            } else if (event.key == "x" && Control != "delete") {
+                if (active) {
+                    active.classList.remove("controlActive")
+                }
+
+                Control = "delete"
+                delete_control.classList.add("controlActive")
+                active = delete_control
+            }
+        }
+    })
+
+    clear_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            Sim.spots.length = 0
+            Sim.objects.length = 0
+        }
+    })
+
+    settings_control.addEventListener("click", event => {
+        if (event.isTrusted) {
+            if (settings.className == "settingsActive") {
+                settings.className = "settingsHidden"
+            } else {
+                settings.className = "settingsActive"
+            }
+        }
+    })
+
+    gravity_spot_slider.addEventListener("input", event => {
+        if (event.isTrusted) {
+            Settings.spotMass = Settings.spotBase * 10 ** gravity_spot_slider.value
+            gravity_spot_value.innerText = Settings.spotMass.toExponential(2)
+        }
+    })
+
+    gravity_spot_reset.addEventListener("click", event => {
+        if (event.isTrusted) {
+            gravity_spot_slider.value = (parseInt(gravity_spot_slider.min) + parseInt(gravity_spot_slider.max)) / 2
+            Settings.spotMass = Settings.spotBase * 10 ** gravity_spot_slider.value
+            gravity_spot_value.innerText = Settings.spotMass.toExponential(2)
+        }
+    })
+
+    object_slider.addEventListener("input", event => {
+        if (event.isTrusted) {
+            Settings.objectMass = Settings.objectBase * 10 ** object_slider.value
+            object_value.innerText = Settings.objectMass.toExponential(2)
+        }
+    })
+
+    object_reset.addEventListener("click", event => {
+        if (event.isTrusted) {
+            object_slider.value = (parseInt(object_slider.min) + parseInt(object_slider.max)) / 2
+            Settings.objectMass = Settings.objectBase * 10 ** object_slider.value
+            object_value.innerText = Settings.objectMass.toExponential(2)
+        }
+    })
+
+    gravity_slider.addEventListener("input", event => {
+        if (event.isTrusted) {
+            Settings.gravity = Settings.gravityBase * 10 ** gravity_slider.value
+            gravity_value.innerText = Settings.gravity.toExponential(2)
+        }
+    })
+
+    gravity_reset.addEventListener("click", event => {
+        if (event.isTrusted) {
+            gravity_slider.value = (parseInt(gravity_slider.min) + parseInt(gravity_slider.max)) / 2
+            Settings.gravity = Settings.gravityBase * 10 ** gravity_slider.value
+            gravity_value.innerText = Settings.gravity.toExponential(2)
+        }
+    })
+
+    warp_input.addEventListener("keypress", event => {
+        if (!event.isTrusted || !/^[0-9]+$/.test(event.key)) {
+            event.preventDefault()
+        }
+    })
+
+    warp_input.addEventListener("paste", event => event.preventDefault())
+
+    warp.addEventListener("click", event => {
+        if (event.isTrusted && warp_input.value) {
+            tick_warp(parseInt(warp_input.value))
+        }
+    })
+
+    control_canvas.addEventListener("mousedown", event => {
+        if (event.isTrusted) {
+            MouseDown.down = true
+            const rect = control_canvas.getBoundingClientRect()
+            MouseDown.x = (event.clientX - rect.left + 1) / SimWidth * 200
+            MouseDown.y = (event.clientY - rect.left + 1) / SimHeight * 200
+        }
+    })
+
+    control_canvas.addEventListener("mouseup", event => {
+        if (event.isTrusted) {
+            if (MouseDown.down && Control == "object") {
+                const rect = control_canvas.getBoundingClientRect()
+                launch_object(event.clientX - rect.left + 1, event.clientY - rect.left + 1)
+            }
+
+            MouseDown.down = false
+            MouseDown.x = null
+            MouseDown.y = null
+        }
+    })
+
+    control_canvas.addEventListener("mousemove", event => {
+        if (Control && event.isTrusted) {
+            control(event)
+        }
+    })
+
+    control_canvas.addEventListener("click", event => {
+        if (event.isTrusted) {
+            // Get coordinates
+
+            const rect = control_canvas.getBoundingClientRect()
+            const x = (event.clientX - rect.left + 1) * 2
+            const y = (event.clientY - rect.top + 1) * 2
+
+            // Controls
+
+            if (Control == "gravity_spot") {
+                // Place gravity spot
+
+                Sim.spots.push({
+                    id: generate_id(),
+                    x: x / SimWidth * 100,
+                    y: y / SimHeight * 100,
+                    radius: Math.floor(Math.sqrt(Settings.spotMass / config.spotDensity)),
+                    mass: Settings.spotMass
+                })
+            } else if (Control == "delete") {
+                // Check for deletion
+
+                delete_objects(x, y)
+            }
+        }
+    })
+
+    control_canvas.addEventListener("mouseout", event => {
+        if (event.isTrusted) {
+            ControlCanvas.clearRect(0, 0, SimWidth, SimHeight)
+            MouseDown.down = false
+            MouseDown.x = null
+            MouseDown.y = null
+        }
+    })
+}
+
+function control(event) {
+    // Clear canvas
+
+    ControlCanvas.clearRect(0, 0, SimWidth, SimHeight)
+
+    // Get coordinates
+
+    const rect = document.getElementById("control").getBoundingClientRect()
+    const x = (event.clientX - rect.left + 1) * 2
+    const y = (event.clientY - rect.top + 1) * 2
+
+    // Control types
+
+    if (Control == "gravity_spot") {
+        // Render gravity spot
+
+        ControlCanvas.fillStyle = `${config.spotColor}A2`
+        ControlCanvas.strokeStyle = `${config.spotColor}A2`
+        ControlCanvas.beginPath()
+        ControlCanvas.arc(x, y, Math.floor(Math.sqrt(Settings.spotMass / config.spotDensity)), 0, Math.PI * 2)
+        ControlCanvas.fill()
+        ControlCanvas.closePath()
+        ControlCanvas.stroke()
+    } else if (Control == "object") {
+        // Render object
+
+        ControlCanvas.fillStyle = `${config.objectColor}A2`
+        ControlCanvas.strokeStyle = `${config.objectColor}A2`
+        ControlCanvas.beginPath()
+        if (!MouseDown.down) {
+            ControlCanvas.arc(x, y, Math.floor(Math.sqrt(Settings.objectMass / config.objectDensity)), 0, Math.PI * 2)
+            ControlCanvas.fill()
+            ControlCanvas.closePath()
+            ControlCanvas.stroke()
+        } else {
+            // Object path
+
+            ControlCanvas.arc(MouseDown.x / 100 * SimWidth, MouseDown.y / 100 * SimHeight, Math.floor(Math.sqrt(Settings.objectMass / config.objectDensity)), 0, Math.PI * 2)
+            ControlCanvas.fill()
+            ControlCanvas.closePath()
+            ControlCanvas.stroke()
+
+            // Render arrow
+
+            render_arrow(x, y)
+        }
+    } else if (Control == "delete" && MouseDown.down) {
+        // Delete objects
+
+        delete_objects(x, y)
+    }
+}
+
+function delete_objects(x, y) {
+    // Objects to destroy
+
+    const destroy_list = []
+
+    // Convert to percentage
+
+    x = x / SimWidth * 100
+    y = y / SimHeight * 100
+
+    // Check for objects to delete
+
+    for (let s = 0; s < Sim.spots.length; s ++) {
+        if (distance(x, y, Sim.spots[s].x, Sim.spots[s].y, "px") <= Sim.spots[s].radius) {
+            destroy_list.push(Sim.spots[s].id)
+        }
+    }
+
+    for (let o = 0; o < Sim.objects.length; o ++) {
+        if (distance(x, y, Sim.objects[o].x, Sim.objects[o].y, "px") <= Sim.objects[o].radius) {
+            destroy_list.push(Sim.objects[o].id)
+        }
+    }
+
+    // Destroy objects
+
+    if (destroy_list.length) {
+        Sim.spots = Sim.spots.filter(spot => !destroy_list.includes(spot.id))
+        Sim.objects = Sim.objects.filter(object => !destroy_list.includes(object.id))
+    }
+}
+
+function render_arrow(x, y) {
+    // Data
+
+    const obj_x = MouseDown.x / 100 * SimWidth
+    const obj_y = MouseDown.y / 100 * SimHeight
+
+    const angle = Math.atan2(y - obj_y, x - obj_x)
+    let dist = Math.ceil(distance(obj_x / SimWidth * 100, obj_y / SimHeight * 100, x / SimWidth * 100, y / SimHeight * 100, "px"))
+
+    if (dist > Math.floor(Math.sqrt(Settings.objectMass / config.objectDensity))) {
+        // Maximum distance
+
+        if (dist >= config.maxDistance) {
+            x = Math.ceil(Math.cos(angle) * config.maxDistance) + obj_x
+            y = Math.ceil(Math.sin(angle) * config.maxDistance) + obj_y
+            dist = config.maxDistance
+        }
+
+        // Rendering
+
+        ControlCanvas.fillStyle = config.arrowDotColor
+        ControlCanvas.strokeStyle = config.arrowDotColor
+
+        for (let d = 0; d < Math.floor(dist / config.arrowDotSpacing); d ++) {
+            const dot_dist = d * config.arrowDotSpacing + config.arrowDotSpacing + 5
+
+            ControlCanvas.beginPath()
+            ControlCanvas.arc(Math.ceil(Math.cos(angle) * dot_dist) + obj_x, Math.ceil(Math.sin(angle) * dot_dist) + obj_y, config.arrowDotRadius, 0, Math.PI * 2)
+            ControlCanvas.fill()
+            ControlCanvas.closePath()
+            ControlCanvas.stroke()
+        }
+    }
+}
+
+function launch_object(x, y) {
+    // Data
+
+    x = x / SimWidth * 200
+    y = y / SimHeight * 200
+
+    const obj_x = MouseDown.x
+    const obj_y = MouseDown.y
+
+    const angle = Math.atan2(obj_y - y, obj_x - x)
+    const power = config.powerMult * Math.min(distance(obj_x, obj_y, x, y, "px"), config.maxDistance)
+
+    // Launch object
+
+    Sim.objects.push({
+        id: generate_id(),
+        x: obj_x,
+        y: obj_y,
+        radius: Math.floor(Math.sqrt(Settings.objectMass / config.objectDensity)),
+        mass: Settings.objectMass,
+        vX: power * Math.cos(angle),
+        vY: power * Math.sin(angle),
+        prevPos: []
+    })
+}
+
+function tick_warp(value) {
+    if (value && !isNaN(value)) {
+        // Elements
+
+        const sliders = document.getElementsByClassName("settingsSlider")
+        const reset = document.getElementsByClassName("sliderReset")
+
+        const warp_input = document.getElementById("warp-input")
+        const warp = document.getElementById("warp")
+
+        // Disable inputs
+
+        for (let s = 0; s < sliders.length; s ++) {
+            sliders[s].disabled = true
+        }
+
+        for (let r = 0; r < reset.length; r ++) {
+            reset[r].disabled = true
+        }
+
+        warp_input.disabled = true
+        warp.disabled = true
+
+        // Tick warp
+
+        NextFrame = false
+
+        let tick = 0
+        const warp_interval = setInterval(() => {
+            // Sim
+
+            sim()
+            render()
+
+            // Warp end
+
+            if (tick ++ == value) {
+                stop_warp(warp_interval)
+            }
+        })
+    }
+}
+
+function stop_warp(warp_interval) {
+    // Elements
+
+    const sliders = document.getElementsByClassName("settingsSlider")
+    const reset = document.getElementsByClassName("sliderReset")
+
+    const warp_input = document.getElementById("warp-input")
+    const warp = document.getElementById("warp")
+
+    // Clear interval
+
+    clearInterval(warp_interval)
+
+    // Enable inputs
+
+    for (let s = 0; s < sliders.length; s ++) {
+        sliders[s].disabled =false
+    }
+
+    for (let r = 0; r < reset.length; r ++) {
+        reset[r].disabled = false
+    }
+
+    warp_input.disabled = false
+    warp.disabled = false
+
+    // Normal simulation
+
+    NextFrame = true
+    requestAnimationFrame(sim)
+}
+</script>
+
+<script>
+const config = {
+    destroyFactor: 20,
+
+    spotDensity: 18750,
+    spotColor: "#000000",
+
+    objectColor: "#0091FF",
+    objectDensity: 4,
+    trailColor: "rgba(0, 145, 255, 0.2)",
+    trailWidth: 3,
+    trailLength: 75,
+
+    powerMult: 0.004,
+    maxDistance: 240,
+    arrowDotSpacing: 40,
+    arrowDotRadius: 8,
+    arrowDotColor: "#BBBBBBA5",
+
+    warpSpeed: 0
+}
+</script>
+
+</html>

@@ -1,0 +1,81 @@
+.exp-tile{
+	margin-bottom: 25px;
+}
+.exp-tile hr{
+	width: 90%;
+  overflow: hidden;
+}
+.exp-photo {
+  position: relative;
+  border: 2px solid #000000;
+  overflow: hidden;
+  padding: 0;
+  margin-right: 15px;
+  margin-left: auto;
+  margin-bottom: 20px;
+  max-width: 250px;
+}
+.exp-photo div {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  color: #ffffff;
+  background-color: #000000;
+  text-align: center;
+}
+.exp-description {
+  padding-right: 30px;
+}
+h3.exp-title {
+  margin: 0 0 10px;
+}
+.exp-details {
+  font-size: .9em;
+  font-style: italic;
+}
+.img-responsive {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#phy-tile, #cs-tile, #mat-tile, #bio-tile {
+  height: 250px;
+  width: 100%;
+  margin-bottom: 15px;
+  position: relative;
+  border: 2px solid #000000;
+  overflow: hidden;
+}
+#phy-tile span, #cs-tile span, #mat-tile span, #bio-tile span {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 1.6em;
+  text-transform: uppercase;
+  background-color: #000;
+  color: #fff;
+  opacity: .8;
+}
+#phy-tile:hover, #cs-tile:hover, #mat-tile:hover, #bio-tile:hover {
+  box-shadow: 0 1px 5px 1px #cccccc;
+}
+#phy-tile {
+  background: url('images/2.jpg') no-repeat;
+  background-position: center;
+}
+#cs-tile {
+  background: url('images/3.jpg') no-repeat;
+  background-position: center;
+}
+#mat-tile {
+  background: url('images/5.jpg') no-repeat;
+  background-position: center;
+}
+#bio-tile {
+  background: url('images/4.jpg') no-repeat;
+  background-position: center;
+}
